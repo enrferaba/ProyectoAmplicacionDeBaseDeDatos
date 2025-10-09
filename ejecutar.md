@@ -1,58 +1,69 @@
-# Guía rápida para ejecutar el proyecto
+# Guía rápida de ejecución (`ejecutar.md`)
 
-Esta chuleta recoge todos los comandos que utilicé para preparar y probar el proyecto.
-La idea es que puedas copiarlos uno a uno en la terminal sin miedo a perderte.
+Este archivo recoge los comandos básicos para trabajar con el proyecto final sin perderte. Ejecuta todo desde la carpeta raíz del repositorio.
 
-## 1. Comprobar versión de Python
-Asegúrate de que tienes Python instalado (versión 3.8 o superior):
+## 1. Preparar la base de datos desde cero
 
 ```bash
-python3 --version
+python3 main.py --init-only
 ```
 
-## 2. Crear un entorno virtual (opcional pero recomendado)
+- Recrea todas las tablas.
+- Carga los datos de ejemplo (puedes añadir `--sin-datos` para dejarla vacía).
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate  # En Windows usa: .venv\Scripts\activate
-```
-
-## 3. Ejecutar el script principal
+## 2. Pipeline completo recomendado para revisar la entrega
 
 ```bash
 python3 main.py
 ```
 
-Este comando creará la base de datos en `data/academico.db` y mostrará los resultados de las
-consultas de ejemplo directamente en la terminal.
+Acciones que realiza automáticamente:
 
-## 4. Inspeccionar la base de datos (opcional)
-Si quieres revisar el contenido manualmente, puedes abrir una sesión interactiva de SQLite:
+1. Reinicia la base con los datos de ejemplo.
+2. Ejecuta las consultas guardadas mostrando el SQL en pantalla.
+3. Genera los reportes CSV en `data/reportes/`.
+4. Lanza la checklist de requisitos del proyecto.
 
-```bash
-sqlite3 data/academico.db
-```
+## 3. Comandos útiles según la tarea
 
-Dentro de la consola de SQLite puedes usar comandos como:
-
-```sql
-.tables
-SELECT * FROM estudiantes;
-SELECT * FROM cursos;
-SELECT * FROM matriculas;
-```
-
-Cuando termines, sal de la consola escribiendo:
-
-```sql
-.exit
-```
-
-## 5. Repetir el proceso desde cero
-Si cambiaste algo en los archivos de SQL, vuelve a ejecutar:
+### Mostrar únicamente las consultas
 
 ```bash
-python3 main.py
+python3 main.py --consultas
 ```
 
-El script borra y recrea las tablas, así que siempre tendrás la versión más reciente de tus datos.
+*(Añade `--reiniciar` si quieres garantizar que trabajas con datos recién cargados).* 
+
+### Generar reportes sin mostrar nada por pantalla
+
+```bash
+python3 main.py --exportar-reportes
+```
+
+*(Recomendado acompañarlo de `--reiniciar` para empezar limpio).* 
+
+### Verificar que todo cumple los requisitos
+
+```bash
+python3 main.py --check
+```
+
+### Lanzar el menú interactivo
+
+```bash
+python3 main.py --menu
+```
+
+Opciones disponibles en el menú:
+
+1. Listar estudiantes, cursos y nota media.
+2. Registrar un nuevo estudiante.
+3. Matricular a un estudiante en un curso.
+4. Registrar una nota (recalcula el estado automáticamente).
+5. Generar reportes en CSV.
+
+> Consejo: si necesitas una base limpia antes del menú, ejecuta `python3 main.py --reiniciar --menu`.
+
+## 4. Limpieza de reportes
+
+Los CSV se guardan dentro de `data/reportes/`. Puedes borrarlos manualmente o regenerarlos con `python3 main.py --exportar-reportes` cuando los necesites.
