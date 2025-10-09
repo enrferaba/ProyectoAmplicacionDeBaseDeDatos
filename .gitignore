@@ -1,0 +1,7 @@
+# Ignorar entorno virtual
+.venv/
+
+# Archivos generados automáticamente
+/data/academico.db
+/data/reportes/
+__pycache__/
