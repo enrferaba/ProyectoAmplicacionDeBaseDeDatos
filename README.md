@@ -1,191 +1,144 @@
-# Proyecto de Ampliación de Bases de Datos (versión novata pero completa)
+# Ampliación de Bases de Datos – Proyecto Final
 
-> Trabajo final desarrollado paso a paso, siguiendo los apuntes de clase y documentando
-todo con detalle para que incluso alguien que empieza desde cero pueda reproducirlo.
+Sistema full-stack que integra Django + DRF, Redis, MongoDB y Neo4j con despliegue dockerizado para cubrir los requisitos del proyecto final de la asignatura.
 
-## 1. Objetivo del proyecto
-
-Construimos un sistema académico sencillo que cubre los elementos típicos exigidos en la asignatura:
-
-- **Modelo relacional completo** con estudiantes, profesores, cursos, matrículas, evaluaciones y calificaciones.
-- **Integridad referencial** mediante claves foráneas y restricciones `CHECK`.
-- **Vista** para resumir la situación académica de cada estudiante.
-- **Triggers** que impiden errores comunes (por ejemplo, que las evaluaciones superen el 100% del curso).
-- **Consultas analíticas** listas para practicar joins, agregaciones y reporting.
-- **Script en Python** que automatiza la creación de la base de datos, genera reportes y valida los requisitos.
-- **Menú interactivo** para registrar nuevos estudiantes, matrículas y notas sin tocar SQL manualmente.
-
-Todo está pensado para que puedas ejecutar el proyecto en tu propio ordenador, revisarlo con calma y adaptarlo a tu entrega final.
-
-## 2. Estructura de carpetas
+## Arquitectura
 
 ```
-.
-├── data/                  # Aquí se genera la base de datos y los reportes CSV
-├── sql/
-│   ├── schema.sql         # Definición completa del modelo relacional + triggers + vista
-│   ├── data.sql           # Datos de ejemplo para arrancar rápidamente
-│   └── consultas.sql      # Consultas de práctica y reporting
-├── main.py                # Script principal con CLI y comprobaciones
-├── ejecutar.md            # Chuleta con todos los comandos
-└── README.md              # Este documento explicativo
+project/
+├── app/
+│   ├── config/                # settings, urls, asgi, channels
+│   ├── core/                  # utilidades comunes (redis, otp, rate limiting)
+│   ├── users/                 # autenticación con sesiones y OTP
+│   ├── transcripts/           # CRUD completo sobre MongoDB con PyMongo
+│   ├── realtime/              # canales WebSocket y contadores en Redis
+│   ├── recommender/           # integración con Neo4j y endpoints de recomendación
+│   ├── dashboards/            # dashboards y agregaciones con Chart.js
+│   └── manage.py
+├── scripts/                   # utilidades (seed, smoke tests)
+├── docker/                    # Dockerfile y helpers
+├── docker-compose.yml
+├── requirements.txt
+├── .env.example
+├── openapi.json
+└── README.md
 ```
 
-## 3. Modelo de datos explicado como principiante
+![Arquitectura](https://mermaid.ink/img/pako:eNp9kM1qwzAMhl9l5GvBIlFaVYUKs5hSpU5NlFSxI0YjlmptIGmNfy9tAbILle0x7177nF3oqRltVaGMfaiMMWWKAD2BUEa2wcTgeG1bTlYdbsFEk7uEa5d07JrWbY7l1irnOQ4_mWzRxtHHdYso1WeBMgA-5tSaa3UB4-4Bl1p8Vt7e0tbBVAOP3c0kryrjzfx5K_xH2Ptn7OYM1GCMur9aZ0G44gVtdm_kAE3vCg4ma8KRlWIMqRoNwsi9k5VPUf9hxKcJh8vBVnqh2cZpgH8RHecT7xkrgjujwWnZVBFwSUTJXk8X1idTn3FP_jzPxze8)
 
-El dominio es una pequeña academia. El diagrama lógico (texto) sería:
+## Requisitos cubiertos
 
-```
-Estudiantes (1) ───< Matriculas >─── (1) Cursos ───< Evaluaciones ───< Calificaciones
-        │                              │
-        └────────────── Prof. ────────┘
-```
+- **Django + DRF**: API principal, OpenAPI/Swagger en `/docs` (drf-spectacular).
+- **Redis**: sesiones, rate limiting, OTP con TTL, contador global y notificaciones tiempo real (Channels + Redis pub/sub).
+- **MongoDB + PyMongo**: CRUD total de transcripciones, filtros, agregaciones para dashboards y vistas Chart.js.
+- **Neo4j**: modelos de usuarios/transcripciones/temas, recomendaciones por contenido, colaborativas e híbridas, consultas extra de usuarios similares y comunidades (GDS Louvain).
+- **Dockerización**: servicios aislados (`web`, `redis`, `mongo`, `neo4j`), volúmenes persistentes, variables via `.env`.
+- **Documentación**: README, `.env.example`, scripts de seed y `openapi.json` exportado.
 
-- `estudiantes`: datos básicos de la persona (nombre, email, teléfono).
-- `profesores`: quién imparte cada curso.
-- `cursos`: oferta académica con fechas y un cupo máximo.
-- `matriculas`: relación N:M entre estudiantes y cursos con estado (`activa`, `aprobada`, etc.).
-- `evaluaciones`: entregas, exámenes o proyectos ponderados hasta sumar el 100% del curso.
-- `calificaciones`: notas que relacionan una matrícula concreta con una evaluación.
-- `vw_resumen_estudiantes`: vista para mostrar nota media, porcentaje cubierto y estado final.
+## Puesta en marcha
 
-### Integridad que vigila la base de datos
+```bash
+cp .env.example .env
+# Edita las variables si es necesario
 
-- Claves foráneas con `ON DELETE CASCADE` para que, si borras un curso, desaparezcan sus matrículas y calificaciones asociadas.
-- Restricciones `CHECK` para asegurar valores válidos (por ejemplo, notas entre 0 y 10).
-- Triggers `trg_validar_porcentaje_insert/update` que evitan sumar más del 100% al definir evaluaciones.
-
-## 4. Requisitos previos
-
-- **Python 3.10 o superior** (se usa la sintaxis `list | None`).
-- No necesitas instalar dependencias externas: todo usa la biblioteca estándar (`sqlite3`, `csv`, `argparse`).
-
-## 5. Guía rápida para impacientes
-
-1. Sitúate en la carpeta raíz del proyecto.
-2. Ejecuta el flujo automático:
-
-   ```bash
-   python3 main.py
-   ```
-
-   El script recrea la base de datos, muestra las consultas, genera reportes CSV y valida que el proyecto cumpla los requisitos.
-
-3. Abre la carpeta `data/` para encontrar `academico.db` y el directorio `reportes/` con los CSV.
-
-Si quieres un desglose más minucioso, continúa leyendo :)
-
-## 6. Explicación detallada de los scripts SQL
-
-### 6.1 `sql/schema.sql`
-
-- Activa `PRAGMA foreign_keys` y borra cualquier rastro previo (tablas, triggers, vista).
-- Crea todas las tablas del modelo relacional con sus restricciones.
-- Define la vista `vw_resumen_estudiantes` para ver la media, el porcentaje cubierto y el estado de cada matrícula.
-- Incluye dos triggers que validan que la suma de `porcentaje` de las evaluaciones de un curso nunca supere el 100%.
-
-### 6.2 `sql/data.sql`
-
-- Añade cuatro estudiantes, tres profesores y tres cursos.
-- Inserta evaluaciones que suman exactamente el 100% por curso.
-- Registra seis matrículas en distintos estados para cubrir casos de uso (aprobada, activa, retirada).
-- Carga calificaciones suficientes como para calcular medias realistas.
-
-### 6.3 `sql/consultas.sql`
-
-Cinco consultas listas para practicar:
-
-1. **Promedio por estudiante y curso:** combina `JOIN` y `AVG`.
-2. **Ocupación por curso:** compara número de matriculados vs. cupo máximo.
-3. **Evaluaciones pendientes:** detecta entregas sin calificar.
-4. **Agenda por profesor:** fechas clave y estudiantes activos por curso.
-5. **Resumen de aprobaciones:** cuenta aprobadas, reprobadas y en progreso por estudiante.
-
-## 7. Script principal `main.py`
-
-El corazón del proyecto controla tres cosas:
-
-1. **Automatización:** recrea la base de datos desde cero y ejecuta las consultas.
-2. **Validaciones:** verifica tablas, vista, triggers, porcentajes y presencia de datos.
-3. **Interacción:** ofrece un menú CLI para añadir estudiantes, matricularlos o registrar notas.
-
-### 7.1 Uso por defecto
-
-```
-python3 main.py
+docker compose up -d --build
 ```
 
-Reinicia la base con los datos de ejemplo y ejecuta el pipeline completo:
+La API quedará disponible en `http://localhost:8000`.
 
-- Muestra cada consulta con su SQL para que puedas aprender mientras observas los resultados.
-- Exporta cada consulta a `data/reportes/reporte_XX.csv`.
-- Lanza una checklist que confirma el cumplimiento de los requisitos del proyecto final.
+### Servicios en Docker Compose
 
-### 7.2 Opciones disponibles
+| Servicio | Puerto | Descripción |
+|----------|--------|-------------|
+| web      | 8000   | Django + DRF + Channels servido con Daphne |
+| redis    | 6379   | Cache, sesiones, OTP y pub/sub |
+| mongo    | 27017  | Transcripciones (CRUD + agregaciones) |
+| neo4j    | 7474/7687 | Motor de recomendaciones |
 
-- `--init-only`: solo recrea la base de datos (ideal antes de pruebas manuales).
-- `--sin-datos`: acompaña a `--init-only` o `--reiniciar` para crear la base vacía.
-- `--reiniciar`: recrea la base antes de ejecutar otras acciones (por ejemplo, `--consultas`).
-- `--consultas`: ejecuta y muestra las consultas guardadas.
-- `--exportar-reportes`: genera/actualiza los CSV.
-- `--check`: realiza las comprobaciones de requisitos.
-- `--menu`: abre el menú interactivo para gestionar datos sin escribir SQL.
+## Variables de entorno
 
-> **Ejemplo combinado:**
-> ```bash
-> python3 main.py --reiniciar --consultas --exportar-reportes --check
-> ```
-> Re-crea la base, muestra consultas, genera reportes y repasa la checklist.
+Ver `.env.example`:
 
-### 7.3 Menú interactivo paso a paso
+```
+SECRET_KEY=changeme
+DEBUG=1
+ALLOWED_HOSTS=*
+REDIS_URL=redis://redis:6379/0
+MONGO_URI=mongodb://mongo:27017
+MONGO_DB=abdb
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=neo4jpass
+```
 
-Al lanzar `python3 main.py --menu` podrás:
+## Casos de uso implementados
 
-1. Ver el listado de estudiantes con sus cursos y nota media.
-2. Registrar un nuevo estudiante (solo pide nombre y correo; el teléfono es opcional).
-3. Matricular a alguien en un curso con el estado que prefieras.
-4. Registrar calificaciones; el sistema recalcula automáticamente si la matrícula queda aprobada o reprobada cuando se completan todas las evaluaciones.
-5. Generar reportes CSV en cualquier momento.
+### Redis
+- **Sesiones**: `SESSION_ENGINE` configurado para Redis.
+- **OTP**: `POST /auth/otp/request` y `POST /auth/otp/verify`, TTL 120s y máximo 3 intentos en 10 minutos.
+- **Cache**: `GET /cache/ping` realiza operación costosa y cachea resultados.
+- **Tiempo real**: WebSocket `/ws/notifications/`, contador `/realtime/counter`, publicación en canal `events:transcriptions` al crear transcripciones.
 
-Cada opción valida los datos introducidos y muestra mensajes claros si algo falla (por ejemplo, un correo duplicado o un ID inexistente).
+### MongoDB
+- Colección `transcriptions` manipulada con PyMongo.
+- CRUD completo `/transcriptions/` con filtros por carpeta y temas.
+- Agregaciones en `/dash/summary` para dashboards (gráfico de barras y donut en `/dash/`).
 
-## 8. Validación del proyecto
+### Neo4j
+- Endpoints `/reco/content/{user_id}`, `/reco/collab/{user_id}`, `/reco/hybrid/{user_id}`.
+- Registro de escuchas `/reco/listen`.
+- Consultas adicionales: `/reco/similar/{user_id}` (usuarios similares) y `/reco/communities` (Louvain sobre GDS).
 
-La checklist que ejecuta `main.py` revisa:
+### Documentación y pruebas
+- OpenAPI exportado en `openapi.json`.
+- Tests automatizados: OTP, caché, CRUD Mongo y recomendaciones.
+- Scripts: `seed_mongo.py`, `seed_neo4j.py`, `smoke.sh`.
 
-- Que las tablas principales existan.
-- Que la vista `vw_resumen_estudiantes` esté disponible.
-- Que los triggers de control de porcentajes estén activos.
-- Que cada curso tenga evaluaciones que sumen exactamente el 100%.
-- Que haya un mínimo de datos de ejemplo (4 estudiantes, 3 cursos, 5 matrículas).
+## Uso de la API (curl)
 
-Si algún punto falla se muestra en pantalla con un mensaje para corregirlo.
+```bash
+# Login
+curl -X POST http://localhost:8000/auth/login -d '{"username":"admin","password":"secret"}' -H 'Content-Type: application/json'
 
-## 9. Reportes generados
+# Solicitud OTP
+curl -X POST http://localhost:8000/auth/otp/request -d '{"user_id":1}' -H 'Content-Type: application/json'
 
-Cada consulta se exporta a un CSV dentro de `data/reportes/`. Esto es útil para adjuntar evidencias en la entrega o para practicar con hojas de cálculo.
+# Verificación OTP
+curl -X POST http://localhost:8000/auth/otp/verify -d '{"user_id":1,"code":"123456"}' -H 'Content-Type: application/json'
 
-- `reporte_01.csv`: promedio por estudiante y curso.
-- `reporte_02.csv`: ocupación de cursos.
-- `reporte_03.csv`: evaluaciones pendientes.
-- `reporte_04.csv`: agenda docente.
-- `reporte_05.csv`: resumen de aprobaciones.
+# CRUD de transcripciones
+curl http://localhost:8000/transcriptions/
 
-## 10. Cómo seguir aprendiendo
+# WebSocket (notificaciones)
+websocat ws://localhost:8000/ws/notifications/
 
-- Añade más cursos o evaluaciones al `data.sql` y vuelve a ejecutar `python3 main.py`.
-- Modifica las consultas o crea otras nuevas (por ejemplo, ranking de profesores según aprobaciones).
-- Experimenta con `--sin-datos` para practicar entradas manuales desde el menú.
-- Abre `data/academico.db` en DB Browser for SQLite y diseña nuevas vistas, índices o triggers.
+# Recomendaciones
+curl http://localhost:8000/reco/content/u1
+curl http://localhost:8000/reco/collab/u1
+curl http://localhost:8000/reco/hybrid/u1
+```
 
-## 11. Resolución de problemas comunes
+## Scripts de semilla
 
-| Problema | Posible causa | Solución |
-|----------|---------------|----------|
-| `sqlite3.OperationalError: no such table ...` | No se ejecutó `schema.sql` | Lanza `python3 main.py --reiniciar` |
-| `IntegrityError: UNIQUE constraint failed` | Correo o matrícula duplicada | Revisa los IDs introducidos en el menú |
-| Los reportes no aparecen | No se ejecutó `--exportar-reportes` | Usa `python3 main.py --exportar-reportes` |
+```bash
+# Requiere variables de entorno configuradas
+python scripts/seed_mongo.py
+python scripts/seed_neo4j.py
+```
 
-## 12. Créditos
+## Tests
 
-Proyecto elaborado por un estudiante motivado que siguió al pie de la letra los apuntes de clase, priorizando la claridad y la documentación para que cualquier novato pueda replicarlo.
+```bash
+pip install -r requirements.txt
+cd app
+pytest
+```
+
+## Presentación técnica
+
+1. **Redis**: sesiones de Django, OTP con TTL + rate limiting, caché y pub/sub para notificaciones.
+2. **MongoDB**: almacenamiento documental de transcripciones con agregaciones para dashboards.
+3. **Neo4j**: grafo de usuarios, transcripciones y temas con recomendaciones multi-enfoque y análisis de comunidades.
+4. **Docker**: despliegue reproducible con servicios aislados y redes compartidas.
+
+Este repositorio entrega todos los componentes solicitados para la asignatura, listos para demostración y defensa.

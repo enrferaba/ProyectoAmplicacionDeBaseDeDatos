@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboards</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Transcription Dashboards</h1>
+    <div style="width: 600px;">
+        <canvas id="perDayChart"></canvas>
+    </div>
+    <div style="width: 600px;">
+        <canvas id="topicsChart"></canvas>
+    </div>
+    <script>
+        async function loadData() {
+            const response = await fetch('/dash/summary');
+            const data = await response.json();
+            const labels = data.per_day.map(item => item._id);
+            const counts = data.per_day.map(item => item.count);
+            const topicsLabels = data.top_topics.map(item => item._id);
+            const topicsCounts = data.top_topics.map(item => item.count);
+
+            new Chart(document.getElementById('perDayChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Transcriptions per day',
+                        backgroundColor: '#4f46e5',
+                        data: counts
+                    }]
+                }
+            });
+
+            new Chart(document.getElementById('topicsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: topicsLabels,
+                    datasets: [{
+                        label: 'Top Topics',
+                        backgroundColor: ['#0ea5e9', '#14b8a6', '#f97316', '#facc15', '#22c55e', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#10b981'],
+                        data: topicsCounts
+                    }]
+                }
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
