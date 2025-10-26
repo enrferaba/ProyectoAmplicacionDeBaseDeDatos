@@ -1,7 +1,8 @@
-# Ignorar entorno virtual
-.venv/
-
-# Archivos generados automáticamente
-/data/academico.db
-/data/reportes/
 __pycache__/
+*.pyc
+.env
+.env.local
+static/
+db.sqlite3
+.idea/
+.vscode/

@@ -1,0 +1,106 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Ampliacion de Bases de Datos API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {"type": "string"},
+                  "password": {"type": "string"}
+                },
+                "required": ["username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Login successful"}
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Logout",
+        "responses": {
+          "200": {"description": "Logout successful"}
+        }
+      }
+    },
+    "/auth/otp/request": {
+      "post": {
+        "summary": "Solicitar OTP",
+        "responses": {
+          "200": {"description": "OTP generado"},
+          "429": {"description": "Demasiados intentos"}
+        }
+      }
+    },
+    "/auth/otp/verify": {
+      "post": {
+        "summary": "Verificar OTP",
+        "responses": {
+          "200": {"description": "OTP verificado"},
+          "400": {"description": "OTP inválido"}
+        }
+      }
+    },
+    "/cache/ping": {
+      "get": {
+        "summary": "Probar caché",
+        "responses": {
+          "200": {"description": "Respuesta cacheada"}
+        }
+      }
+    },
+    "/realtime/counter": {
+      "get": {
+        "summary": "Contador en tiempo real",
+        "responses": {
+          "200": {"description": "Valor actual"}
+        }
+      }
+    },
+    "/transcriptions/": {
+      "get": {"summary": "Listar transcripciones", "responses": {"200": {"description": "Listado"}}},
+      "post": {"summary": "Crear transcripción", "responses": {"201": {"description": "Creada"}}}
+    },
+    "/transcriptions/{id}": {
+      "get": {"summary": "Detalle transcripción", "responses": {"200": {"description": "Detalle"}}},
+      "put": {"summary": "Actualizar transcripción", "responses": {"200": {"description": "Actualizada"}}},
+      "delete": {"summary": "Eliminar transcripción", "responses": {"204": {"description": "Eliminada"}}}
+    },
+    "/reco/listen": {
+      "post": {"summary": "Registrar escucha", "responses": {"200": {"description": "OK"}}}
+    },
+    "/reco/content/{user_id}": {
+      "get": {"summary": "Recomendación por contenido", "responses": {"200": {"description": "Lista"}}}
+    },
+    "/reco/collab/{user_id}": {
+      "get": {"summary": "Recomendación colaborativa", "responses": {"200": {"description": "Lista"}}}
+    },
+    "/reco/hybrid/{user_id}": {
+      "get": {"summary": "Recomendación híbrida", "responses": {"200": {"description": "Lista"}}}
+    },
+    "/reco/similar/{user_id}": {
+      "get": {"summary": "Usuarios similares", "responses": {"200": {"description": "Lista"}}}
+    },
+    "/reco/communities": {
+      "get": {"summary": "Comunidades", "responses": {"200": {"description": "Comunidades detectadas"}}}
+    },
+    "/dash/summary": {
+      "get": {"summary": "Datos para dashboards", "responses": {"200": {"description": "Datos de agregaciones"}}}
+    },
+    "/dash/": {
+      "get": {"summary": "Vista HTML de dashboards", "responses": {"200": {"description": "HTML"}}}
+    }
+  }
+}
