@@ -46,6 +46,10 @@ docker compose up -d --build
 
 La API quedará disponible en `http://localhost:8000`.
 
+> 💡 **Windows/PowerShell**: para evitar conflictos con el alias integrado de `curl`, utiliza `curl.exe` (por ejemplo `curl.exe -X POST ...`) o `Invoke-RestMethod` con un diccionario de cabeceras (`-Headers @{"Content-Type"="application/json"}`).
+
+Tras el primer arranque puedes seguir los logs con `docker compose logs -f web` para confirmar que el servicio está escuchando.
+
 ### Servicios en Docker Compose
 
 | Servicio | Puerto | Descripción |
@@ -98,30 +102,31 @@ NEO4J_PASSWORD=neo4jpass
 
 ```bash
 # Login
-curl -X POST http://localhost:8000/auth/login -d '{"username":"admin","password":"secret"}' -H 'Content-Type: application/json'
+curl.exe -X POST http://localhost:8000/auth/login -d '{"username":"admin","password":"secret"}' -H "Content-Type: application/json"
 
 # Solicitud OTP
-curl -X POST http://localhost:8000/auth/otp/request -d '{"user_id":1}' -H 'Content-Type: application/json'
+curl.exe -X POST http://localhost:8000/auth/otp/request -d '{"user_id":1}' -H "Content-Type: application/json"
 
 # Verificación OTP
-curl -X POST http://localhost:8000/auth/otp/verify -d '{"user_id":1,"code":"123456"}' -H 'Content-Type: application/json'
+curl.exe -X POST http://localhost:8000/auth/otp/verify -d '{"user_id":1,"code":"123456"}' -H "Content-Type: application/json"
 
 # CRUD de transcripciones
-curl http://localhost:8000/transcriptions/
+curl.exe http://localhost:8000/transcriptions/
 
 # WebSocket (notificaciones)
-websocat ws://localhost:8000/ws/notifications/
+websocat ws://localhost:8000/ws/notifications/  # instala websocat o usa wscat
 
 # Recomendaciones
-curl http://localhost:8000/reco/content/u1
-curl http://localhost:8000/reco/collab/u1
-curl http://localhost:8000/reco/hybrid/u1
+curl.exe http://localhost:8000/reco/content/u1
+curl.exe http://localhost:8000/reco/collab/u1
+curl.exe http://localhost:8000/reco/hybrid/u1
 ```
 
 ## Scripts de semilla
 
 ```bash
 # Requiere variables de entorno configuradas
+# y dependencias instaladas (`pip install -r requirements.txt` si lo ejecutas desde tu máquina)
 python scripts/seed_mongo.py
 python scripts/seed_neo4j.py
 ```
